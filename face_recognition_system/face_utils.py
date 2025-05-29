@@ -1,4 +1,3 @@
-
 import os
 import cv2
 import numpy as np
@@ -7,6 +6,7 @@ import unicodedata
 from insightface.app import FaceAnalysis
 from sklearn.metrics.pairwise import cosine_similarity
 
+# Inicialización del modelo
 app = FaceAnalysis(name="buffalo_l", providers=["CPUExecutionProvider"])
 app.prepare(ctx_id=0, det_size=(640, 640))
 
@@ -41,20 +41,26 @@ def registrar_persona(nombre, ruta_fotos, ruta_guardado):
     else:
         print("⚠️ No se registraron embeddings válidos.")
 
-def identificar_persona(path_img, ruta_embeddings, umbral=0.4):
+def identificar_persona(path_img, ruta_embeddings, umbral=0.45):  # Ajuste del umbral aquí
     emb_consulta = obtener_embedding(path_img)
     if emb_consulta is None:
         return "Error de imagen"
+    
     max_sim = -1
     nombre_identificado = "Desconocido"
+    
     for archivo in os.listdir(ruta_embeddings):
         if archivo.endswith(".pkl"):
             with open(os.path.join(ruta_embeddings, archivo), "rb") as f:
                 emb_guardado = pickle.load(f)
                 sim = cosine_similarity([emb_consulta], emb_guardado).mean()
+                print(f"🔍 Comparando con {archivo.replace('.pkl', '')}: similaridad = {sim:.4f}")  # NUEVO
+    
                 if sim > max_sim:
                     max_sim = sim
                     nombre_identificado = archivo.replace(".pkl", "").replace("_", " ").title()
+    
     if max_sim >= 1 - umbral:
         return f"{nombre_identificado} (similaridad: {max_sim:.4f})"
     return f"Desconocido (similaridad: {max_sim:.4f})"
+
